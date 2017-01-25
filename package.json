@@ -1,0 +1,22 @@
+{
+  "name": "pintxo_service",
+  "version": "0.0.1",
+  "description": "Web service for PintxoWay App",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Codevs5/PintxoService.git"
+  },
+  "keywords": [
+    "REST"
+  ],
+  "author": "Codevs <codevs5@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Codevs5/PintxoService/issues"
+  },
+  "homepage": "https://github.com/Codevs5/PintxoService#readme"
+}
