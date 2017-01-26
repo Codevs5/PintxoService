@@ -18,5 +18,10 @@
   "bugs": {
     "url": "https://github.com/Codevs5/PintxoService/issues"
   },
-  "homepage": "https://github.com/Codevs5/PintxoService#readme"
+  "homepage": "https://github.com/Codevs5/PintxoService#readme",
+  "dependencies": {
+    "body-parser": "^1.16.0",
+    "express": "^4.14.0",
+    "request": "^2.79.0"
+  }
 }
