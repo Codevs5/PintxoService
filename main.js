@@ -11,3 +11,5 @@ app.use('/local', require('./routes/local.routes'))
 app.listen(app.get('port'), function() {
     console.log(`Servidor ejecutandose en el puerto ${app.get('port')}`)
 })
+
+module.exports = app
