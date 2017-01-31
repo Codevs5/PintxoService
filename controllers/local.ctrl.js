@@ -18,8 +18,8 @@ const parseList = (data) => {
         currentLocal.name = local.name
         currentLocal.vicinity = local.vicinity
         currentLocal.icon = local.icon
-        currentLocal.openNow = local.opening_hours.open_now || '-'
-        currentLocal.type = local.types
+        if (typeof local.opening_hours !== 'undefined') currentLocal.openNow = local.opening_hours.open_now
+        currentLocal.types = local.types
         if (typeof local.photos !== 'undefined') {
             currentLocal.photo = {
                 height: local.photos[0].height,
@@ -40,12 +40,13 @@ const parseLocalDetail = (data) => {
     local.address = data.formatted_address
     local.phoneNum = data.formatted_phone_number
     local.icon = data.icon
-    local.priceLvl = data.price_level || '-1'
+    local.scope = 'GOOGLE'
+    if(typeof data.price_level !== 'undefined') local.priceLvl = data.price_level
     local.web = {
       localURL : data.url,
       mapURL : data.website
     }
-    local.type = data.types
+    local.types = data.types
     local.location = {
         lat: data.geometry.location.lat,
         lng: data.geometry.location.lng
@@ -56,12 +57,11 @@ const parseLocalDetail = (data) => {
         currentPhoto.height = photo.height
         currentPhoto.width = photo.width
         currentPhoto.photoId = photo.photo_reference
-        local.photo.push(currentPhoto)
+        local.photos.push(currentPhoto)
     }
 
     local.hour = {
         openNow: data.opening_hours.open_now,
-        //permanentlyClosed:
         periods: data.opening_hours.periods
     }
     return local
@@ -144,7 +144,7 @@ exports.getList = (req, res) => {
     else if (typeof req.query.city != 'undefined') locals = searchLocalListByCity(req.query.city)
     else {
         res.statusCode = 400
-        res.send({
+        return res.send({
             error: 'Parámetros incorrectos'
         })
     }
