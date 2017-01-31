@@ -18,9 +18,8 @@ const parseList = (data) => {
         currentLocal.name = local.name
         currentLocal.vicinity = local.vicinity
         currentLocal.icon = local.icon
-        if (typeof local.opening_hours !== 'undefined') currentLocal.openNow = local.opening_hours.open_now
+        currentLocal.openNow = local.opening_hours.open_now || '-'
         currentLocal.type = local.types
-            //  currentLocal.placeLvl =
         if (typeof local.photos !== 'undefined') {
             currentLocal.photo = {
                 height: local.photos[0].height,
@@ -41,14 +40,17 @@ const parseLocalDetail = (data) => {
     local.address = data.formatted_address
     local.phoneNum = data.formatted_phone_number
     local.icon = data.icon
-        //local.placeLvl =
-    local.localURL = data.url
+    local.priceLvl = data.price_level || '-1'
+    local.web = {
+      localURL : data.url,
+      mapURL : data.website
+    }
     local.type = data.types
     local.location = {
         lat: data.geometry.location.lat,
         lng: data.geometry.location.lng
     }
-    local.photo = []
+    local.photos = []
     for (photo of data.photos) {
         let currentPhoto = {}
         currentPhoto.height = photo.height
