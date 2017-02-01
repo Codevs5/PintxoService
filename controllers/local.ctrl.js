@@ -3,22 +3,32 @@ const request = require('request')
 
 if (Number.prototype.toRadians === undefined) {
     Number.prototype.toRadians = function() {
-        return this * Math.PI / 180;
+        return this * Math.PI / 180
     }
 }
 
-const parseList = (data) => {
+const parseList = (data, locationClient) => {
     let localList = JSON.parse(data).results
     let result = {
         locals: []
     }
     for (local of localList) {
         let currentLocal = {}
-        currentLocal.placeId = local.place_id
+        currentLocal.placeId = local.reference
         currentLocal.name = local.name
         currentLocal.vicinity = local.vicinity
         currentLocal.icon = local.icon
-        currentLocal.distance = 500 //TODO: Calcular distancias
+        //currentLocal.distance = 500 //TODO: Calcular distancias
+        currentLocal.distance = (typeof locationClient === "undefined") ? "-1" : calculateDistance({
+            pt1: {
+                lon: locationClient.lon,
+                lat: locationClient.lat
+            },
+            pt2: {
+                lon: local.geometry.location.lng,
+                lat: local.geometry.location.lat
+            }
+        })
         if (typeof local.opening_hours !== 'undefined') currentLocal.openNow = local.opening_hours.open_now
         currentLocal.types = local.types
         if (typeof local.photos !== 'undefined') {
@@ -33,7 +43,7 @@ const parseList = (data) => {
     return result
 }
 
-const parseLocalDetail = (data) => {
+const parseLocalDetail = (data, locationClient) => {
     data = JSON.parse(data).result
     let local = {}
     local.placeId = data.place_id
@@ -41,7 +51,16 @@ const parseLocalDetail = (data) => {
     local.address = data.formatted_address
     local.phoneNum = data.formatted_phone_number
     local.icon = data.icon
-    local.distance = 500 //TODO: Calcular distancias
+    local.distance = (typeof locationClient === "undefined") ? "-1" : calculateDistance({
+        pt1: {
+            lon: locationClient.lon,
+            lat: locationClient.lat
+        },
+        pt2: {
+            lon: data.geometry.location.lng,
+            lat: data.geometry.location.lat
+        }
+    }) //500 //TODO: Calcular distancias
     local.scope = 'GOOGLE'
     if (typeof data.price_level !== 'undefined') local.priceLvl = data.price_level
     local.web = {
@@ -69,6 +88,25 @@ const parseLocalDetail = (data) => {
     return local
 }
 
+const calculateDistance = (options) => { 
+    try {
+        let R = 6371
+        let dLat = (options.pt2.lat - options.pt1.lat) * (Math.PI / 180)
+        let dLon = (options.pt2.lon - options.pt1.lon) * (Math.PI / 180)
+        let a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(options.pt1.lat * (Math.PI / 180)) * Math.cos(options.pt2.lat * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        let d = R * c
+        return Math.floor(d * 1000)
+    } catch (error) {
+        console.log(error)
+        return 0
+    }
+
+}
+
 const searchGoogleAPI = (url) => {
     return new Promise((resolve, reject) => {
         request(url, (err, res, body) => {
@@ -83,7 +121,7 @@ const getRadiusByViewport = (center, bound) => {
     let lat2 = bound.lat
     let lon1 = center.long
     let lon2 = bound.long
-    let R = 6371e3;
+    let R = 6371e3
     let a = Math.sin((lat2 - lat1).toRadians() / 2) * Math.sin((lat2 - lat1).toRadians() / 2) + Math.cos(lat1.toRadians()) * Math.cos(lat2.toRadians()) * Math.sin((lon2 - lon1).toRadians() / 2) * Math.sin((lon2 - lon1).toRadians() / 2)
     let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
@@ -149,26 +187,26 @@ const getLocalDetails = (ref) => {
     })
 }
 
-const parseAndSendJSON = (res, data, parser) => {
-  try{
-    res.statusCode = 200
-    res.send(parser(data))
-  }catch(err){
-      internalError(res)
-  }
+const parseAndSendJSON = (res, data, parser, locationClient) => {
+    try {
+        res.statusCode = 200
+        res.send(parser(data, locationClient))
+    } catch (err) {
+        internalError(res)
+    }
 }
 
 const internalError = (res) => {
-  res.statusCode = 500
-  res.send({
-    error: 'Internal Server Error'
-  })
+    res.statusCode = 500
+    res.send({
+        error: 'Internal Server Error'
+    })
 }
 const invalidParams = (res) => {
-  res.statusCode = 400
-  res.send({
-      error: 'Parámetros incorrectos'
-  })
+    res.statusCode = 400
+    res.send({
+        error: 'Parámetros incorrectos'
+    })
 }
 
 exports.getList = (req, res) => {
@@ -179,11 +217,16 @@ exports.getList = (req, res) => {
     else {
         return invalidParams(res)
     }
-    locals.then(data => parseAndSendJSON(res, data, parseList))
-          .catch((err) => {
-        internalError(res)
-        console.log(`${Date.now()} ${err}`)
-    })
+    locals.then(data => {
+            (typeof req.query.lat != 'undefined' && typeof req.query.long != 'undefined') ? parseAndSendJSON(res, data, parseList, {
+                lat: req.query.lat,
+                lon: req.query.long
+            }): parseAndSendJSON(res, data, parseList)
+        })
+        .catch((err) => {
+            internalError(res)
+            console.log(`${Date.now()} ${err}`)
+        })
 }
 
 exports.getDetail = (req, res) => {
