@@ -88,7 +88,7 @@ const parseLocalDetail = (data, locationClient) => {
     return local
 }
 
-const calculateDistance = (options) => {
+const calculateDistance = (options) => { 
     try {
         let R = 6371
         let dLat = (options.pt2.lat - options.pt1.lat) * (Math.PI / 180)
