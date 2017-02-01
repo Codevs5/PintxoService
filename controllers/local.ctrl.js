@@ -14,10 +14,11 @@ const parseList = (data) => {
     }
     for (local of localList) {
         let currentLocal = {}
-        currentLocal.placeId = local.reference
+        currentLocal.placeId = local.place_id
         currentLocal.name = local.name
         currentLocal.vicinity = local.vicinity
         currentLocal.icon = local.icon
+        currentLocal.distance = 500 //TODO: Calcular distancias
         if (typeof local.opening_hours !== 'undefined') currentLocal.openNow = local.opening_hours.open_now
         currentLocal.types = local.types
         if (typeof local.photos !== 'undefined') {
@@ -35,16 +36,17 @@ const parseList = (data) => {
 const parseLocalDetail = (data) => {
     data = JSON.parse(data).result
     let local = {}
-    local.placeId = data.reference
+    local.placeId = data.place_id
     local.name = data.name
     local.address = data.formatted_address
     local.phoneNum = data.formatted_phone_number
     local.icon = data.icon
+    local.distance = 500 //TODO: Calcular distancias
     local.scope = 'GOOGLE'
-    if(typeof data.price_level !== 'undefined') local.priceLvl = data.price_level
+    if (typeof data.price_level !== 'undefined') local.priceLvl = data.price_level
     local.web = {
-      localURL : data.url,
-      mapURL : data.website
+        localURL: data.url,
+        mapURL: data.website
     }
     local.types = data.types
     local.location = {
@@ -112,8 +114,18 @@ const getCityCoordinates = (city) => {
     })
 }
 
-const searchLocalListByLocation = (lat, long, rad, ud = 'km') => {
-    let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${long}&radius=${rad}&types=bakery|bar|cafe|casino|food|meal_delivery|meal_takeaway|night_club|restaurant|shopping_mall&key=${config.google.placesKey}`
+const convertRad = (rad, ud) => {
+    switch (ud) {
+        case 'km':
+            return rad * 1000
+            //TODO: Añadir más unidades en el futuro
+        default:
+            return rad
+    }
+}
+
+const searchLocalListByLocation = (lat, long, rad, ud = 'm') => {
+    let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${long}&radius=${(ud === 'm')?rad:convertRad(rad, ud)}&types=bakery|bar|cafe|casino|food|meal_delivery|meal_takeaway|night_club|restaurant|shopping_mall&key=${config.google.placesKey}`
     return searchGoogleAPI(url)
 }
 
@@ -137,34 +149,52 @@ const getLocalDetails = (ref) => {
     })
 }
 
+const parseAndSendJSON = (res, data, parser) => {
+  try{
+    res.statusCode = 200
+    res.send(parser(data))
+  }catch(err){
+      internalError(res)
+  }
+}
+
+const internalError = (res) => {
+  res.statusCode = 500
+  res.send({
+    error: 'Internal Server Error'
+  })
+}
+const invalidParams = (res) => {
+  res.statusCode = 400
+  res.send({
+      error: 'Parámetros incorrectos'
+  })
+}
+
 exports.getList = (req, res) => {
     let locals
     if (typeof req.query.lat != 'undefined' && typeof req.query.long != 'undefined' && typeof req.query.rad != 'undefined') locals = searchLocalListByLocation(req.query.lat, req.query.long, req.query.rad, req.query.ud)
     else if (typeof req.query.query != 'undefined') locals = searchLocalListByQuery(req.query.query)
     else if (typeof req.query.city != 'undefined') locals = searchLocalListByCity(req.query.city)
     else {
-        res.statusCode = 400
-        return res.send({
-            error: 'Parámetros incorrectos'
-        })
+        return invalidParams(res)
     }
-    locals.then(data => {
-        res.statusCode = 200
-        res.send(parseList(data))
+    locals.then(data => parseAndSendJSON(res, data, parseList))
+          .catch((err) => {
+        internalError(res)
+        console.log(`${Date.now()} ${err}`)
     })
 }
 
 exports.getDetail = (req, res) => {
     let ref = req.params.id
-    if (typeof ref == 'undefined') {
-        res.statusCode = 400
-        res.send({
-            error: 'Parámetros incorrectos'
-        })
-    } else {
+    if (typeof ref == 'undefined') invalidParams(res)
+    else {
         getLocalDetails(ref)
-            .then((data) => res.send({
-                local: parseLocalDetail(data)
-            }))
+            .then((data) => parseAndSendJSON(res, data, parseLocalDetail))
+            .catch((err) => {
+                internalError(res)
+                console.log(`${Date.now()} ${err}`)
+            })
     }
 }
