@@ -71,6 +71,7 @@ const parseAndSendJSON = (res, data, parser, locationClient) => {
         res.statusCode = 200
         res.send(parser(data, locationClient))
     } catch (err) {
+        console.log(`${Date.now()}:\n ${err}`)
         Response.internalError(res)
     }
 }
