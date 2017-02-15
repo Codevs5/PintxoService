@@ -71,7 +71,7 @@ const parseAndSendJSON = (res, data, parser, locationClient) => {
         res.statusCode = 200
         res.send(parser(data, locationClient))
     } catch (err) {
-        Response.internalError(res)
+        Response.internalError(res,  {desc: err, func: 'locals.parseAndSendJSON(93)'})
     }
 }
 
@@ -90,7 +90,7 @@ exports.getList = (req, res) => {
             }): parseAndSendJSON(res, data, Parser.parseList)
         })
         .catch((err) => {
-            Response.internalError(res)
+            Response.internalError(res, {desc: err, func: 'locals.getList(93)'})
             console.log(`${Date.now()} ${err}`)
         })
 }
@@ -102,7 +102,7 @@ exports.getDetail = (req, res) => {
         getLocalDetails(ref)
             .then((data) => parseAndSendJSON(res, data, Parser.parseLocalDetail))
             .catch((err) => {
-                Response.internalError(res)
+                Response.internalError(res,  {desc: err, func: 'locals.getDetail(105)'})
                 console.log(`${Date.now()} ${err}`)
             })
     }
