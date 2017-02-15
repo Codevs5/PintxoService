@@ -1,7 +1,8 @@
 let config = {
   env : 'development',
   hostname : 'dev.default.es',
-  google : {}
+  google : {},
+  logs : {}
 }
 
 module.exports = config
