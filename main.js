@@ -12,6 +12,7 @@ app.use('/routes', require('./routes/route.routes'))
 
 app.listen(app.get('port'), function() {
     console.log(`Servidor ejecutandose en el puerto ${app.get('port')}`)
+    require('./config/initializers/database').getDB()
 })
 
 module.exports = app
