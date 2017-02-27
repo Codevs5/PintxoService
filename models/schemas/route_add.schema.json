@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "properties": {
+    "nombre": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string"
+    },
+    "descripcion": {
+      "type": "string"
+    },
+    "autor": {
+      "type": "string",
+      "description" : "string que hace referencia a la id del autor"
+    },
+    "locales": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "place_id": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "integer"
+          }
+        },
+        "required": ["place_id", "pos"]
+      }
+    },
+    "longitud": {
+      "type": "integer"
+    },
+    "categoria": {
+      "type": "string"
+    },
+    "estado": {
+      "type": "string",
+      "enum": ["Publica", "Privada", "Borrador", "Seguidores"]
+    },
+    "localidad": {
+      "type": "object",
+      "properties": {
+        "tipo": {
+          "type": "string",
+          "enum": ["Pequeña", "Mediana", "Grande"]
+        },
+        "nombre": {
+          "type": "string"
+        }
+      },
+      "required": ["tipo", "nombre"]
+    },
+    "coste_medio": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "nombre","date", "autor", "locales", "longitud", "estado", "categoria", "localidad"
+  ]
+}
